@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+</head>
+<style>
+    * { margin: 0; padding: 0;box-sizing: border-box; }
+
+    body { font: 13px Helvetica, Arail; }
+
+    #inputdiv { background: rgb(224, 188, 188);padding: 3px;position: fixed;bottom: 0;width: 50%; }
+
+    #msginput {border: 0; width: 90%; margin-right: .5% }
+
+    #msgbtn {background: rgb(130, 224, 225);border: none;padding: 1px;}
+
+    #messages { list-style-type: none; margin: 0; padding: 0; }
+    #messages li { padding: 5px 10px; }
+    #messages li:nth-child(odd) { background: #eee; }
+    #messages { margin-bottom: 40px }
+</style>
+<body>
+     <img id="photo"/>
+    <h1>群聊</h1>
+    <ul id="messages"></ul>
+    <div id="inputdiv">
+        輸入:<input type="text" id="msginput">
+        <button id="msgbtn">發送</button>
+        <hr>
+        <input type="file" id="imgfile">
+        <button id="imgbtn" >發送圖片</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+            //網路相關
+            var socket = io();
+            socket.on('chat message',function(msg){
+                //console.log('收到:'+msg);
+                $('#messages').append($('<li>').text(msg));
+                window.scrollTo(0, document.body.scrollHeight);    
+            });
+            socket.on('byte message', function (data) {
+                console.log('byte message');
+                var bufView = new Uint8Array(data.buffer);
+                console.log(data.buffer);
+                var blob = new Blob([data.buffer], { type: "image/jpeg" });
+                var urlCreator = window.URL || window.webkitURL;
+                var imageUrl = urlCreator.createObjectURL(blob);
+                //var img = document.querySelector("#photo");
+                //img.src = imageUrl;
+                $('#messages').append($('<li>').append(
+                    $('<img>').width(100).height(100).attr('src',imageUrl)
+                ));
+                window.scrollTo(0, document.body.scrollHeight);    
+            });
+            //
+            $('#msgbtn').click((e) => {
+                let msg = $('#msginput').val();
+                //console.log('發射:[' + msg + ']');
+                socket.emit('chat message', msg);
+                $('#msginput').val('');
+                return false;
+            });
+            //發送圖片
+            $('#imgbtn').click((e)=>{
+                //console.log('imgbtn:click');
+
+               
+       
+                var file = $('#imgfile').get(0).files[0];
+                let reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = function (e) {
+                    var arrayBuffer = e.target.result;
+                    //var bytes = new Uint8Array(arrayBuffer);
+                    console.log(arrayBuffer);
+                    
+                    socket.emit('byte message', { image: true, buffer: arrayBuffer });
+                    //
+                    // var blob = new Blob([arrayBuffer], { type: "image/jpeg" });
+                    // var urlCreator = window.URL || window.webkitURL;
+                    // var imageUrl = urlCreator.createObjectURL(blob);
+                    // var img = document.querySelector("#photo");
+                    // img.src = imageUrl;
+                } 
+               
+                /* var selectedFile = $('#imgfile').get(0).files[0];
+                let reader = new FileReader();
+                reader.readAsArrayBuffer (selectedFile);  
+                reader.onload = function () {
+                    var arrayBuffer = this.result;
+                    var bufView = new Uint8Array(arrayBuffer);
+                    socket.emit('byte message', bufView);
+                } */
+            });
+        });
+    </script>
+</body>
+
+</html>
