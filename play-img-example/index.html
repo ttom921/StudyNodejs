@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+</head>
+<style>
+    * { margin: 0; padding: 0;box-sizing: border-box; }
+
+    body { font: 13px Helvetica, Arail; }
+
+    #inputdiv { background: rgb(224, 188, 188);padding: 3px;position: fixed;bottom: 0;width: 50%; }
+
+    #msginput {border: 0; width: 90%; margin-right: .5% }
+
+    #msgbtn {background: rgb(130, 224, 225);border: none;padding: 1px;}
+
+    #messages { list-style-type: none; margin: 0; padding: 0; }
+    #messages li { padding: 5px 10px; }
+    #messages li:nth-child(odd) { background: #eee; }
+    #messages { margin-bottom: 40px }
+</style>
+<body>
+     <img id="photo" width="320" height="200"/>
+    <h1>群聊</h1>
+    <ul id="messages"></ul>
+    <div id="inputdiv">
+        輸入:<input type="text" id="msginput">
+        <button id="msgbtn">發送</button>
+        <hr>
+        <input type="file" id="imgfile" multiple="multiple">
+        <button id="imgbtn" >發送圖片</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+            //網路相關
+            var socket = io();
+            socket.on('chat message',function(msg){
+                //console.log('收到:'+msg);
+                $('#messages').append($('<li>').text(msg));
+                window.scrollTo(0, document.body.scrollHeight);    
+            });
+            socket.on('byte message', function (data) {
+                console.log('byte message');
+                var bufView = new Uint8Array(data.buffer);
+                console.log(data.buffer);
+                var blob = new Blob([data.buffer], { type: "image/jpeg" });
+                var urlCreator = window.URL || window.webkitURL;
+                var imageUrl = urlCreator.createObjectURL(blob);
+                var img = document.querySelector("#photo");
+                img.src = imageUrl;
+                window.scrollTo(0, document.body.scrollHeight);    
+            });
+            //
+            $('#msgbtn').click((e) => {
+                let msg = $('#msginput').val();
+                //console.log('發射:[' + msg + ']');
+                socket.emit('chat message', msg);
+                $('#msginput').val('');
+                return false;
+            });
+            //發送圖片
+            $('#imgbtn').click((e)=>{
+                //console.log('imgbtn:click');
+                //讀所有的圖檔
+                const uploadPromises = [];
+                var files=$('#imgfile').get(0).files;
+                var Bufferary= new ArrayBuffer(files.length);
+                for(i=0 ;i<files.length;i++){
+                    var uploadPromise=getFileBuffer(Bufferary[i], files[i]);
+                    uploadPromises.push(uploadPromise);
+                }
+                Promise.all(uploadPromises).then(result=>{
+                    for(i=0 ;i<files.length;i++){
+                        Bufferary[i]= result[i];
+                    }
+                    //開始發射
+                    setInterval(() => {
+                        for (i = 0; i < files.length; i++) {
+                            var file = files[i]
+                            //console.log('發射:'+file.name )
+                            socket.emit('byte message', { image: true, buffer: Bufferary[i] });
+                        }
+                    }, 500);
+                });
+                //  var data={ image: true, buffer: Bufferary[0] };
+                // var blob = new Blob([data.buffer], { type: "image/jpeg" });
+                //  var urlCreator = window.URL || window.webkitURL;
+                //  var imageUrl = urlCreator.createObjectURL(blob);
+                //  var img = document.querySelector("#photo");
+                //  img.src = imageUrl;
+
+                // var files=$('#imgfile').get(0).files;
+                // var Bufferary= new ArrayBuffer(files.length);
+                // const p1 = getFileBuffer(Bufferary[0], files[0]);
+                // const p2 = getFileBuffer(Bufferary[20], files[20]);
+                // Promise.all([p1,p2]).then(result=>{
+                //     console.log('load finish');
+                //     console.log(result[0]);
+                //     console.log(result[1]);
+                // var data={ image: true, buffer: result[0] };
+                // var blob = new Blob([data.buffer], { type: "image/jpeg" });
+                //  var urlCreator = window.URL || window.webkitURL;
+                //  var imageUrl = urlCreator.createObjectURL(blob);
+                //  var img = document.querySelector("#photo");
+                //  img.src = imageUrl;
+                // });
+               
+
+                // const uploadPromises = [];
+                // Array.from(files).forEach((file)=>{
+                //     const uploadPromise=new Promise((resolve,reject)=>{
+                //         let reader = new FileReader();
+                //         reader.readAsArrayBuffer(file);
+                //         reader.onload=()=>{
+                //             Bufferary[i] = reader.result;
+                //         }
+                //         reader.onerror = error => reject(error);
+                //     });
+                //     uploadPromises.push(uploadPromise)
+                // });
+                // Promise.all(uploadPromises).then(
+                //     () => alert('Upload completed successfully!'),
+                //     () => alert('Error during file upload.') ,
+                // )
+                //var files=$('#imgfile').get(0).files;
+                //console.log(files.length);
+
+
+                
+                // var file;
+                // for(i=0 ;i<files.length;i++ ){
+                //     var file = files[i];
+                //     let reader = new FileReader();
+                //     reader.readAsArrayBuffer(file);
+                //     reader.onload=function(e){
+                //         Bufferary[i] = e.target.result;
+                //         console.log(Bufferary[i]);
+                //     }
+                // }
+
+                //開始發射
+                // var data={ image: true, buffer: Bufferary[0] }
+                // var bufView = new Uint8Array(data.buffer);
+                // console.log(data.buffer);
+                // var blob = new Blob([data.buffer], { type: "image/jpeg" });
+                // var urlCreator = window.URL || window.webkitURL;
+                // var imageUrl = urlCreator.createObjectURL(blob);
+                // var img = document.querySelector("#photo");
+                // img.src = imageUrl;
+
+                // setTimeout(() => {
+                //     socket.emit('byte message', { image: true, buffer: Bufferary[0] });
+                // }, 500);
+                // setInterval(function(){
+                //     for(i=0 ;i<files.length;i++ ){
+                //         var file = files[i]
+                //         //console.log('發射:'+file.name )
+                //         socket.emit('byte message', { image: true, buffer: Bufferary[i] });
+                //     }
+                // },100);
+                // var file = $('#imgfile').get(0).files[0];
+                // let reader = new FileReader();
+                // reader.readAsArrayBuffer(file);
+                // reader.onload = function (e) {
+                //     var arrayBuffer = e.target.result;
+                //     console.log(arrayBuffer);
+                    
+                //     //socket.emit('byte message', { image: true, buffer: arrayBuffer });
+                //     //
+                    
+                // } 
+               
+                
+            });
+        });
+        function getFileBuffer(buf,file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = () =>{
+                        var buf= reader.result;
+                        console.log(buf);
+                        resolve(buf);
+                    } 
+                    reader.onerror = error => reject(error);
+                });
+            }
+        // function getBufferFromFile(arrayBuffer, file) {
+        //         return new Promise((resolve, rejfect) => {
+        //             let reader = new FileReader();
+        //             reader.readAsArrayBuffer(file);
+        //             reader.onload = (e) => {
+        //                 arrayBuffer = e.target.result;
+        //                 resolve(arrayBuffer);
+        //             }
+        //             reader.onerror = () => reject('Failure to load file.');
+
+        //         });
+
+    </script>
+</body>
+
+</html>
