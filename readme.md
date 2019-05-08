@@ -14,3 +14,4 @@ byte-example 是簡單的傳送byte陣列
 
 byte-img-example 是可以聊天和傳送圖片(以byte陣列方式)
 
+play-img-example 可以傳送連續的圖片(以byte陣列方式)

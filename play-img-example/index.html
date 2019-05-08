@@ -21,8 +21,9 @@
     #messages { margin-bottom: 40px }
 </style>
 <body>
-    <div style="width:320px;height:200px;">
-            <img id="photo" style="width:100%; height:100%" />
+    不顯示只傳送: <input type="checkbox" id="myCheck"/>
+    <div id="image1" style="width:320px;height:200px;">
+        <img id="photo" style="width:100%; height:100%" />
     </div>
      
     <h1>群聊</h1>
@@ -49,11 +50,18 @@
                 //console.log('byte message');
                 //var bufView = new Uint8Array(data);
                 //console.log(data.buffer);
-                var blob = new Blob([data], { type: "image/jpeg" });
-                var urlCreator = window.URL || window.webkitURL;
-                var imageUrl = urlCreator.createObjectURL(blob);
-                var img = document.querySelector("#photo");
-                img.src = imageUrl;
+                // Get the checkbox
+                var checkBox = document.getElementById("myCheck");
+                if (checkBox.checked != true) {
+                    var blob = new Blob([data], { type: "image/jpeg" });
+                    var urlCreator = window.URL || window.webkitURL;
+                    var imageUrl = urlCreator.createObjectURL(blob);
+                    var img = document.querySelector("#photo");
+                    img.src = imageUrl;
+                }
+                
+                data.length=0;
+               
                 window.scrollTo(0, document.body.scrollHeight);    
             });
             //------------------------------------------
