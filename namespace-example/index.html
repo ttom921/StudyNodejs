@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+</head>
+<style>
+    * { margin: 0; padding: 0;box-sizing: border-box; }
+
+    body { font: 13px Helvetica, Arail; }
+
+    #inputdiv { background: rgb(224, 188, 188);padding: 3px;position: fixed;bottom: 0;width: 50%; }
+
+    #msginput {border: 0; width: 90%; margin-right: .5% }
+
+    #msgbtn {background: rgb(130, 224, 225);border: none;padding: 1px;}
+
+    #messages { list-style-type: none; margin: 0; padding: 0; }
+    #messages li { padding: 5px 10px; }
+    #messages li:nth-child(odd) { background: #eee; }
+    #messages { margin-bottom: 40px }
+</style>
+<body>
+    不顯示只傳送: <input type="checkbox" id="myCheck"/>
+    <div id="image1" style="width:320px;height:200px;">
+        <img id="photo" style="width:100%; height:100%" />
+    </div>
+     
+    <h1>群聊</h1>
+    <ul id="messages"></ul>
+    <div id="inputdiv">
+        輸入:<input type="text" id="msginput">
+        <button id="msgbtn">發送</button>
+        <hr>
+        <input type="file" id="imgfile" multiple="multiple">
+        <button id="imgbtn" >發送圖片</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+            //網路相關
+            //有關聊峋
+            var socket_chat = io('http://localhost:3000/nsp_chat');
+            socket_chat.on('chat message',function(msg){
+                //console.log('收到:'+msg);
+                $('#messages').append($('<li>').text(msg));
+                window.scrollTo(0, document.body.scrollHeight);    
+            });
+            
+            //------------------------------------------
+            $('#msgbtn').click((e) => {
+                let msg = $('#msginput').val();
+                console.log('發射:[' + msg + ']');
+                socket_chat.emit('chatmessage', msg);
+                $('#msginput').val('');
+                return false;
+            });
+            //發送圖片
+            $('#imgbtn').click((e)=>{
+                //console.log('imgbtn:click');
+                //讀所有的圖檔
+                // const uploadPromises = [];
+                // var files=$('#imgfile').get(0).files;
+                // var Bufferary= new ArrayBuffer(files.length);
+                // for(i=0 ;i<files.length;i++){
+                //     var uploadPromise=getBufferFromFile(files[i]);
+                //     uploadPromises.push(uploadPromise);
+                // }
+                // Promise.all(uploadPromises).then(result=>{
+                //     for(i=0 ;i<files.length;i++){
+                //         Bufferary[i]= result[i];
+                //     }
+                //     //開始發射
+                //     setInterval(() => {
+                //         for (i = 0; i < files.length; i++) {
+                //             var file = files[i]
+                //             //console.log('發射:'+file.name )
+                //             //socket.emit('byte message', { image: true, buffer: Bufferary[i] });
+                //             socket.emit('byte message', Bufferary[i]);
+                //         }
+                //     }, 500);
+                // });
+            });
+        });
+        function getBufferFromFile(file){
+            return new Promise( (resolve,reject)=>{
+                const reader = new FileReader();
+
+                reader.readAsArrayBuffer(file);
+                reader.onload=()=>{
+                    
+                    var buf = reader.result;
+                    resolve(buf);
+                }
+                reader.onerror=()=>{
+                    reject('讀取檔案失敗');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
