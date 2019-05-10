@@ -95,7 +95,7 @@
             </div>
         </div>
         <div class="clschannel">
-            <ul class="clsmessages"></ul>
+            <ul class="clsmessages" id="messages3"></ul>
             <div class="inputdiv">
                 輸入:<input type="text" class="clsmsginput" id="msginput3">
                 <button id="msgbtn3">發送</button>
@@ -105,9 +105,9 @@
             </div>
         </div>
         <div class="clschannel">
-            <ul class="clsmessages"></ul>
+            <ul class="clsmessages" id="messages4"></ul>
             <div class="inputdiv">
-                輸入:<input type="text" class="clsmsginput">
+                輸入:<input type="text" class="clsmsginput" id="msginput4">
                 <button id="msgbtn4">發送</button>
                 <hr>
                 <input type="file" id="imgfile4" multiple="multiple">
@@ -125,72 +125,174 @@
 <script>
     $(function () {
         console.log("doucument ready!");
-        // var ns_sockets = [
-        //     io.connect('http://localhost:3000/aaa-123'),
-        //     io.connect('http://localhost:3000/aaa-123')
-        //         //io('http://localhost:3000/aaa-123')
-        // ];
-        var ns_socket = io.connect('http://localhost:3000/aaa-123');
-        var idx = 0;
-        ns_socket.on('connect', function () {
-            console.log('收到:<connect>');
-            // 要求房間列表
-            ns_socket.emit('getRooms', '');
-        });
-        ns_socket.on('rooomsData', function (roomlist) {
-            console.log('收到:<rooomsData>' + roomlist);
-            //加入房間
-            var myroom=roomlist[0];
-            console.log('client: <createJoinRoom>-myroom=' + myroom);
-            console.log('client: <createJoinRoom>-room=' + myroom);
-            ns_socket.emit('createJoinRoom', myroom);
-        });
-        ns_socket.on('success',function(room){
-            console.log('收到:<success>加入' + room);
-        });
-        ns_socket.on('err',function(room){
-            console.log('收到:<err>加入' + room);
-        });
-        ns_socket.on('chatmessage',function(data){
-            console.log('收到:<chatmessage>' + data.room+' msg:' +data.msg);
-            $('#messages1').append($('<li>').text(data.msg));
-        })
+        var ns_sockets = [
+            io.connect('http://localhost:3000/aaa-123'),
+            io.connect('http://localhost:3000/aaa-123'),
+            io.connect('http://localhost:3000/aaa-123'),
+            io.connect('http://localhost:3000/aaa-123')
+        ];
+        var roomlst=[];
+        //建立回調函數
+        for (i in ns_sockets) {
+            console.log('處理ns_sockets->'+i);
+            // 連線處理
+            ns_sockets[i].on('connect', handleConnect(ns_sockets[i], i));
+            // 房間列表
+            ns_sockets[i].on('rooomsData', handlerooomsData(ns_sockets[i], i));
+            // success 處理
+            ns_sockets[i].on('success', handleSuccess(ns_sockets[i]),i);
+            // err 處理
+            ns_sockets[i].on('err', handleErr(ns_sockets[i]),i);
+            // 斷線處理
+            ns_sockets[i].on('disconnect', handleDisconnect(ns_sockets[i]),i);
+            // 聊天處理
+            ns_sockets[i].on('chatmessage', handleChatmessage(ns_sockets[i]),i);
+        }
+        //UI
         $('#msgbtn1').click(function () {
-           console.log('msgbtn1 click');
-           let msg = $('#msginput1').val();
-           ns_socket.emit('chatmessage', {"room":'room1',"msg":msg});
-           $('#msginput1').val('');
+            console.log('msgbtn1 click');
+            let msg = $('#msginput1').val();
+            ns_sockets[0].emit('chatmessage', { "room": 'room1', "msg": msg });
+            $('#msginput1').val('');
         });
-//
-        var ns_socket2 = io.connect('http://localhost:3000/aaa-123');
-        var idx = 1;
-        ns_socket2.on('connect', function () {
-            console.log('收到:<connect>');
-            // 要求房間列表
-            ns_socket2.emit('getRooms', '');
-        });
-        ns_socket2.on('rooomsData', function (roomlist) {
-            console.log('收到:<rooomsData>' + roomlist);
-            //加入房間
-            console.log('client: <createJoinRoom>-room=' + roomlist[idx]);
-            ns_socket2.emit('createJoinRoom', roomlist[idx]);
-        });
-        ns_socket2.on('success',function(room){
-            console.log('收到:<success>加入' + room);
-        });
-        ns_socket2.on('err',function(room){
-            console.log('收到:<err>加入' + room);
-        });
-        ns_socket2.on('chatmessage',function(data){
-            console.log('收到:<chatmessage> room:'+data.room+' msg:' +data.msg);
-            $('#messages2').append($('<li>').text(data.msg));
-        })
         $('#msgbtn2').click(function () {
-           console.log('msgbtn2 click');
-           let msg = $('#msginput2').val();
-           ns_socket2.emit('chatmessage', {"room":'room2',"msg":msg});
-           $('#msginput2').val('');
+            console.log('msgbtn2 click');
+            let msg = $('#msginput2').val();
+            ns_sockets[1].emit('chatmessage', { "room": 'room2', "msg": msg });
+            $('#msginput2').val('');
         });
+        $('#msgbtn3').click(function () {
+            console.log('msgbtn3 click');
+            let msg = $('#msginput3').val();
+            ns_sockets[2].emit('chatmessage', { "room": 'room3', "msg": msg });
+            $('#msginput3').val('');
+        });
+        $('#msgbtn4').click(function () {
+            console.log('msgbtn4 click');
+            let msg = $('#msginput4').val();
+            ns_sockets[3].emit('chatmessage', { "room": 'room4', "msg": msg });
+            $('#msginput4').val('');
+        });
+        
+        // 聊天處理
+        function handleChatmessage(ns, idx) {
+            return function (data) {
+                console.log('收到:<chatmessage>' + data.room + ' msg:' + data.msg);
+                idx = getidxfromroom(data.room)+1;
+                //console.log('idx' + idx);
+                var msglst = '#messages' + idx;
+                console.log(msglst);
+                $(msglst).append($('<li>').text(data.msg));
+            }
+        }
+        // err 處理
+        function handleErr(ns, idx){
+            return function(room){
+                console.log(ns.id+' 收到:<err>加入' + room);
+            }
+        }
+        // success 處理
+        function handleSuccess(ns, idx){
+            return function(room){
+                console.log(ns.id+' 收到:<success>加入' + room);
+            }
+        }
+
+        // 房間列表
+        function handlerooomsData(ns, idx) {
+            return function (roomlist) {
+                console.log('收到:<rooomsData>' + roomlist);
+                roomlst = roomlist;
+                //加入房間
+                var myroom = roomlist[idx];
+                console.log('client: <createJoinRoom>-room=' + myroom);
+                ns.emit('createJoinRoom', myroom);
+            }
+        }
+        // 斷線處理
+        function handleDisconnect(ns, idx){
+            return function () {
+                console.log('收到:<disconnect> ns-id:'+ns.id);
+                
+            }
+        }
+        // 連線處理
+        function handleConnect(ns, idx) {
+            return function () {
+                console.log('收到:<connect> ns-id:'+ns.id);
+                // 要求房間列表
+                ns.emit('getRooms', '');
+            }
+        }
+       
+        function getidxfromroom(room){
+            for(i=0;i<roomlst.length;i++){
+                if(roomlst[i]== room) return i;
+            }
+            return -1;
+        }
+        
+        // var ns_socket = ns_sockets[0];
+        // var idx = 0;
+        // ns_socket.on('connect', function () {
+        //     console.log('收到:<connect>');
+        //     // 要求房間列表
+        //     ns_socket.emit('getRooms', '');
+        // });
+        // ns_socket.on('rooomsData', function (roomlist) {
+        //     console.log('收到:<rooomsData>' + roomlist);
+        //     //加入房間
+        //     var myroom=roomlist[0];
+        //     console.log('client: <createJoinRoom>-myroom=' + myroom);
+        //     console.log('client: <createJoinRoom>-room=' + myroom);
+        //     ns_socket.emit('createJoinRoom', myroom);
+        // });
+        // ns_socket.on('success',function(room){
+        //     console.log('收到:<success>加入' + room);
+        // });
+        // ns_socket.on('err',function(room){
+        //     console.log('收到:<err>加入' + room);
+        // });
+        // ns_socket.on('chatmessage',function(data){
+        //     console.log('收到:<chatmessage>' + data.room+' msg:' +data.msg);
+        //     $('#messages1').append($('<li>').text(data.msg));
+        // })
+        // $('#msgbtn1').click(function () {
+        //    console.log('msgbtn1 click');
+        //    let msg = $('#msginput1').val();
+        //    ns_socket.emit('chatmessage', {"room":'room1',"msg":msg});
+        //    $('#msginput1').val('');
+        // });
+//
+        // var ns_socket2 = ns_sockets[1];;
+        // var idx = 1;
+        // ns_socket2.on('connect', function () {
+        //     console.log('收到:<connect>');
+        //     // 要求房間列表
+        //     ns_socket2.emit('getRooms', '');
+        // });
+        // ns_socket2.on('rooomsData', function (roomlist) {
+        //     console.log('收到:<rooomsData>' + roomlist);
+        //     //加入房間
+        //     console.log('client: <createJoinRoom>-room=' + roomlist[idx]);
+        //     ns_socket2.emit('createJoinRoom', roomlist[idx]);
+        // });
+        // ns_socket2.on('success',function(room){
+        //     console.log('收到:<success>加入' + room);
+        // });
+        // ns_socket2.on('err',function(room){
+        //     console.log('收到:<err>加入' + room);
+        // });
+        // ns_socket2.on('chatmessage',function(data){
+        //     console.log('收到:<chatmessage> room:'+data.room+' msg:' +data.msg);
+        //     $('#messages2').append($('<li>').text(data.msg));
+        // })
+        // $('#msgbtn2').click(function () {
+        //    console.log('msgbtn2 click');
+        //    let msg = $('#msginput2').val();
+        //    ns_socket2.emit('chatmessage', {"room":'room2',"msg":msg});
+        //    $('#msginput2').val('');
+        // });
 //
         //var root = io.connect("http://127.0.0.1:3000");
         // var printers = io.connect("http://localhost:3000/A4D90C-printers");
