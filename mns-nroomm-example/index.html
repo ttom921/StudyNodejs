@@ -297,6 +297,7 @@
         function    handleBytemessage(ns, idx){
             return function (data) {
                 //console.log('收到:<bytemessage>' + data.room + ' buffdata :' + data.bufdata);
+                console.log('收到:<bytemessage>' + data.room );
                 var checkBox = document.getElementById("myCheck");
                 if (checkBox.checked != true) {
                     idx = getidxfromroom(data.room) + 1;

@@ -17,3 +17,6 @@ byte-img-example 是可以聊天和傳送圖片(以byte陣列方式)
 play-img-example 可以傳送連續的圖片(以byte陣列方式)
 
 namespace-example 單一`namespace`和單一`room`頻道的測試
+
+mns-nroomm-example 單一`namespace`和4個`room`頻道的測試
+

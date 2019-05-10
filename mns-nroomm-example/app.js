@@ -61,6 +61,14 @@ ns_name.on('connection',function(socket){
 
         //console.log('<bytemessage> :' + ' room:'+data.room);
         ns_name.to(data.room).emit('bytemessage',data);
+
+
+        // for(var i=0;i<registeredRooms.length;i++){
+        //     data.room=registeredRooms[i];
+        //     ns_name.to(registeredRooms[i]).emit('bytemessage',data);
+        //     console.log('<bytemessage> :' + ' room:'+registeredRooms[i]);
+        // }
+        
     });
 });
 
