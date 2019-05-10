@@ -14,21 +14,56 @@ var namespaces = [
     io.of('/ns2'),
     io.of('/ns3')
 ];
+//建立room
+let registeredRooms = ["channel1", "channel2", "channel3","channel4"]; 
 for (i in namespaces) {
     namespaces[i].on('connection',handleConnection(namespaces[i]));  
 }
 
 function handleConnection(ns) {
+    
     return function (socket){ //connection
-    console.log("connected ");
+    console.log("connection ");
+    socket.emit("connection",registeredRooms);
     //socket.on('setUsername',setUsernameCallback(socket,ns));                       
     socket.on('disconnect', disconnectCallback(socket,ns));   
     socket.on('chatmessage',chatMessageCallback(socket,ns));                     
     //socket.on('messageChat',messageChatCallback(socket,ns));
-    //socket.on('createJoinRoom',createJoinRoomCallback(socket,ns));  
+    socket.on('createJoinRoom',createJoinRoomCallback(socket,ns));  
+    socket.on('bytemessage',byteMessaecCallback(socket,ns));
+
+
+    
  
    };
  }
+ //
+ function byteMessaecCallback(socket,ns){
+    return function(bufdata){
+        console.log("bytemessage ");
+        socket.emit("bytemessage",bufdata);
+      };
+ }
+ //
+ function connectedCallback(socket, ns){
+    return function(socket){
+        console.log("connected ");
+        //socket.broadcast.send("It works!");
+      };
+ }
+ // 加入房間
+function createJoinRoomCallback(socket, ns) {
+    return function(room){
+        console.log("Joining Room...: " + room);
+        if(registeredRooms.includes(room)){
+            //socket已加入房間
+            socket.emit("success","有效房間名:"+room);
+        }else{
+            // 沒有此房間
+            socket.emit("err","無效房間名:"+room);
+        }
+    }
+}
  //斷線處理
  function disconnectCallback(socket,ns) {
      return function(msg){
