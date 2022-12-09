@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/ttom921/StudyNodejs#readme",
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.17.3"
   }
 }
